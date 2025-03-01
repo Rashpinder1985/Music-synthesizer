@@ -89,3 +89,4 @@ ax.set_title(f"{wave_type} Wave ({filter_type}-pass)")
 ax.set_xlabel("Time")
 ax.set_ylabel("Amplitude")
 st.pyplot(fig)
+
