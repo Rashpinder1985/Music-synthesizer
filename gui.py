@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, lfilter, square, sawtooth
 import wave
+import io
 from pydub import AudioSegment
 from pydub.playback import play
 
@@ -34,7 +35,8 @@ def apply_filter(data, low_cutoff, high_cutoff, filter_type="low"):
         b, a = butter(5, normal_cutoff, btype='high', analog=False)
     elif filter_type == "band":
         if low_cutoff >= high_cutoff:
-            return data
+            st.warning("⚠️ Low cutoff should be lower than high cutoff! Swapping values.")
+            low_cutoff, high_cutoff = high_cutoff, low_cutoff
         low_normal = low_cutoff / nyquist
         high_normal = high_cutoff / nyquist
         b, a = butter(5, [low_normal, high_normal], btype='band', analog=False)
@@ -71,8 +73,22 @@ audio = AudioSegment(
     channels=1
 )
 
-# Automatically play sound when waveform or frequency is changed
-play(audio)
+# 🟢 FIX: Streamlit embedded audio player (ensures playback)
+st.audio(audio.export(format="wav").read(), format="audio/wav")
+
+# 🟢 FIX: Provide Download Button
+def generate_download_link(audio):
+    buffer = io.BytesIO()
+    audio.export(buffer, format="wav")
+    buffer.seek(0)
+    st.download_button(
+        label="🔊 Download Sound",
+        data=buffer,
+        file_name="synthesized_sound.wav",
+        mime="audio/wav"
+    )
+
+generate_download_link(audio)
 
 # Save to WAV file function
 def save_wave():
@@ -84,7 +100,7 @@ def save_wave():
         wf.setframerate(SAMPLE_RATE)
         wf.writeframes(wave_int16.tobytes())
 
-    st.success(f"Saved: {filename}")
+    st.success(f"✅ Saved: {filename}")
 
 # Save button
 if st.button("💾 Save as WAV"):
