@@ -1,9 +1,10 @@
 import streamlit as st
 import numpy as np
-import sounddevice as sd
 import matplotlib.pyplot as plt
 from scipy.signal import butter, lfilter, square, sawtooth
 import wave
+from pydub import AudioSegment
+from pydub.playback import play
 
 # Constants
 SAMPLE_RATE = 44100  # 44.1 kHz sample rate
@@ -61,14 +62,21 @@ if filter_type == "band":
 else:
     filtered_wave = apply_filter(wave, low_cutoff, high_cutoff, filter_type)
 
+# Convert waveform to 16-bit PCM for pydub
+wave_int16 = np.int16(filtered_wave * 32767)
+audio = AudioSegment(
+    wave_int16.tobytes(),
+    frame_rate=SAMPLE_RATE,
+    sample_width=2,
+    channels=1
+)
+
 # Automatically play sound when waveform or frequency is changed
-sd.stop()  # Stop any ongoing playback before playing new sound
-sd.play(filtered_wave, SAMPLE_RATE)
+play(audio)
 
 # Save to WAV file function
 def save_wave():
     filename = f"{wave_type}_{filter_type}_filtered.wav"
-    wave_int16 = np.int16(filtered_wave * 32767)
 
     with wave.open(filename, 'w') as wf:
         wf.setnchannels(1)
@@ -89,4 +97,3 @@ ax.set_title(f"{wave_type} Wave ({filter_type}-pass)")
 ax.set_xlabel("Time")
 ax.set_ylabel("Amplitude")
 st.pyplot(fig)
-
